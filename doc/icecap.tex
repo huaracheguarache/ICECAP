@@ -502,10 +502,11 @@ This section controls which reference data is retrieved. Also it allows to selec
  \item \texttt{verdata}: determines which verification data is used. Currently supported are
  \begin{enumerate}
  	\item \texttt{osi-401-b}
- 	\item \texttt{osi-cdr}: This is a combination of osi-450-a1 for 10/1978 to 12/2020, osi-430-a for 01/2021 to 09/2025, and osi-438-a from 10/2025 onwards.
+ 	\item \texttt{osi-408}
+ 	\item \texttt{osi-cdr}: This is a combination of osi-450-a1 for 1978 to 2020, osi-430-a for 2021 to 2025, and osi-438-a from 2025 onwards.
  \end{enumerate}
 As described, forecast data within \ice is always interpolated to the reference data grid. 
- 
+
 
   \item \texttt{keep\_native}: If \texttt{yes} the raw/non-interpolated forecast data will be kept. Note that even when enabling this option, raw forecast data will be deleted in an ecFlow \texttt{clean} task at the end of the suite. However, pausing the suite allows to check the interpolation manually. Furthermore, there is a metric implemented (see chapter \ref{chap:metrics}) to provide graphic products of non-interpolated and interpolated forecasts, which can be visually inspected. 
 \end{itemize}
@@ -667,9 +668,11 @@ The following datasets are implemented in \ice.
 
 \subsection{Observational Datasets (verdata)}
 
+Please not that the SSMIS-based observational data sets osi-401 and osi-430 have been discontinued in 2025. The AMSR2-based datasets osi-408 and osi-438 should be used instead.
 \begin{itemize}
-		\item \texttt{osi-401-b}
-		\item \texttt{osi-cdr}: this is a temporal combination of osi-450-a1 and osi-430-a
+	\item \texttt{osi-401-b} (\url{https://osi-saf.eumetsat.int/products/osi-401-d})
+	\item \texttt{osi-cdr}: this is a temporal combination of osi-450-a1 (\url{https://osi-saf.eumetsat.int/products/osi-450-a1}), osi-430-a (\url{https://osi-saf.eumetsat.int/products/osi-430-a}), and osi-438 (\url{https://osi-saf.eumetsat.int/products/osi-438})
+	\item \texttt{osi-408} (\url{https://osi-saf.eumetsat.int/products/osi-408-a})
 \end{itemize}
 	
 \subsection{Forecast Datasets}
@@ -704,20 +707,21 @@ It is possible to derive forecast statistics for specific NSIDC regions \citep{M
 
 Download these files to \texttt{sourcedir/etc}. Next, run the script \texttt{create\_nsidc\_regions.py} in the same folder:
 
-  \begin{lstlisting}[language=bash]
-	# generate NSIDC region maks for osi-cr and osi-401-b grids
-	$ python3 create_nsidc_regions.py osi-401-b 
-		NSIDC-0780_SeaIceRegions_PS-N12.5km_v1.0.nc
-	
-	$ python3 create_nsidc_regions.py osi-cdr 
-		NSIDC-0780_SeaIceRegions_EASE2-N25km_v1.0.nc
+\begin{lstlisting}[language=bash]
+# generate NSIDC region maks for osi-cdr and osi-401-b / osi-408 grids
+$ python3 create_nsidc_regions.py osi-408
+NSIDC-0780_SeaIceRegions_PS-N12.5km_v1.0.nc
+
+$ python3 create_nsidc_regions.py osi-cdr
+  NSIDC-0780_SeaIceRegions_EASE2-N25km_v1.0.nc
+
 \end{lstlisting}
 
 Four files will be created:
 \begin{itemize}
-	\item \texttt{nsidc\_osi-401-b.nc}
+	\item \texttt{nsidc\_osi-408.nc}
 	\item \texttt{nsidc\_osi-cdr.nc}
-	\item \texttt{nsidc\_osi-401-b.png}
+	\item \texttt{nsidc\_osi-408.png}
 	\item \texttt{nsidc\_osi-cdr.png}
 \end{itemize}
 
