@@ -14,8 +14,8 @@ import matplotlib
 import argparse
 
 
-def generate_regions(grid, ifile_nsidc):
-    out_path = f'nsidc_{grid}.nc'
+def generate_regions(grid, hemisphere, ifile_nsidc):
+    out_path = f'nsidc_{grid}_{hemisphere.lower()}.nc'
 
     if os.path.exists(out_path):
         raise FileExistsError(f'Output file {out_path} already exists')
@@ -25,33 +25,68 @@ def generate_regions(grid, ifile_nsidc):
 
     ds_nsidc = xr.open_dataset(ifile_nsidc)
 
+    if hemisphere == 'NH':
+        da_nsidc = ds_nsidc['sea_ice_region']
+    else:
+        da_nsidc = ds_nsidc['sea_ice_region_NASA']
+        da_nsidc = da_nsidc.rename('sea_ice_region')
+
     # Get OSI data from THREDDS server.
     if grid == 'osi-cdr':
-        if (
-            os.path.basename(ifile_nsidc)
-            != 'NSIDC-0780_SeaIceRegions_EASE2-N25km_v1.0.nc'
-        ):
-            print(
-                f'WARNING: If possible use NSIDC-0780_SeaIceRegions_EASE2-N25km_v1.0.nc when generating {grid} region '
-                'file'
+        if hemisphere == 'NH':
+            if (
+                os.path.basename(ifile_nsidc)
+                != 'NSIDC-0780_SeaIceRegions_EASE2-N25km_v1.0.nc'
+            ):
+                print(
+                    f'WARNING: If possible use NSIDC-0780_SeaIceRegions_EASE2-N25km_v1.0.nc when generating {grid} '
+                    'region file'
+                )
+            ifile_osi = (
+                'https://thredds.met.no/thredds/dodsC/osisaf/met.no/reprocessed/ice/conc_cra_files/2022/10/'
+                'ice_conc_nh_ease2-250_icdr-v3p0_202210191200.nc'
             )
-        ifile_osi = (
-            'https://thredds.met.no/thredds/dodsC/osisaf/met.no/reprocessed/ice/conc_cra_files/2022/10/'
-            'ice_conc_nh_ease2-250_icdr-v3p0_202210191200.nc'
-        )
+        else:
+            if (
+                os.path.basename(ifile_nsidc)
+                != 'NSIDC-0780_SeaIceRegions_EASE2-S25km_v1.0.nc'
+            ):
+                print(
+                    f'WARNING: If possible use NSIDC-0780_SeaIceRegions_EASE2-S25km_v1.0.nc when generating {grid} '
+                    'region file'
+                )
+            ifile_osi = (
+                'https://thredds.met.no/thredds/dodsC/osisaf/met.no/reprocessed/ice/conc_cra_files/2022/10/'
+                'ice_conc_sh_ease2-250_icdr-v3p0_202210191200.nc'
+            )
+
     else:
-        if (
-            os.path.basename(ifile_nsidc)
-            != 'NSIDC-0780_SeaIceRegions_PS-N12.5km_v1.0.nc'
-        ):
-            print(
-                f'WARNING: If possible use NSIDC-0780_SeaIceRegions_PS-N12.5km_v1.0.nc when generating {grid} region '
-                'file'
+        if hemisphere == 'NH':
+            if (
+                os.path.basename(ifile_nsidc)
+                != 'NSIDC-0780_SeaIceRegions_PS-N12.5km_v1.0.nc'
+            ):
+                print(
+                    f'WARNING: If possible use NSIDC-0780_SeaIceRegions_PS-N12.5km_v1.0.nc when generating {grid} '
+                    'region file'
+                )
+            ifile_osi = (
+                'https://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/conc/2020/07/'
+                'ice_conc_nh_polstere-100_multi_202007261200.nc'
             )
-        ifile_osi = (
-            'https://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/conc/2020/07/'
-            'ice_conc_nh_polstere-100_multi_202007261200.nc'
-        )
+        else:
+            if (
+                os.path.basename(ifile_nsidc)
+                != 'NSIDC-0780_SeaIceRegions_PS-S12.5km_v1.0.nc'
+            ):
+                print(
+                    f'WARNING: If possible use NSIDC-0780_SeaIceRegions_PS-S12.5km_v1.0.nc when generating {grid} '
+                    f'region file'
+                )
+            ifile_osi = (
+                'https://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/conc/2020/07/'
+                'ice_conc_sh_polstere-100_multi_202007261200.nc'
+            )
 
     ds_osi = xr.open_dataset(ifile_osi)['ice_conc']
     ds_osi['xc'] = ds_osi['xc'] * 1000
@@ -109,9 +144,9 @@ def generate_regions(grid, ifile_nsidc):
     ):
         print('Same grid spacing --> no interpolation needed')
 
-        ds_regions_osi = ds_nsidc['sea_ice_region'].isel(
-            x=ds_nsidc['sea_ice_region'].x.isin(ds_osi.xc),
-            y=ds_nsidc['sea_ice_region'].y.isin(ds_osi.yc),
+        ds_regions_osi = da_nsidc.isel(
+            x=da_nsidc.x.isin(ds_osi.xc),
+            y=da_nsidc.y.isin(ds_osi.yc),
         )
 
     else:
@@ -121,7 +156,7 @@ def generate_regions(grid, ifile_nsidc):
             (a, b) for a in ds_nsidc.y.values for b in ds_nsidc.x.values
         ]
         interp = NearestNDInterpolator(
-            all_coords_regionfile, ds_nsidc['sea_ice_region'].values.flatten()
+            all_coords_regionfile, da_nsidc.values.flatten()
         )
 
         # Now interpolate on OSI grid.
@@ -133,14 +168,8 @@ def generate_regions(grid, ifile_nsidc):
     # Ocean should be nan.
     ds_regions_osi = xr.where(ds_regions_osi == 0, np.nan, ds_regions_osi)
 
-    ds_regions_osi.attrs['flag_values'] = ds_nsidc['sea_ice_region'].attrs[
-        'flag_values'
-    ][1:]
-    ds_regions_osi.attrs['flag_meanings'] = np.asarray(
-        ds_nsidc['sea_ice_region'].attrs['flag_meanings'].split(' ')
-    )[1:]
-    ds_regions_osi.attrs['flag_meanings_short'] = np.asarray(
-        [
+    short_flag_meanings = {
+        'NH': [
             'CARC',
             'BEAS',
             'CHUS',
@@ -159,7 +188,16 @@ def generate_regions(grid, ifile_nsidc):
             'BYS',
             'BALS',
             'GOA',
-        ]
+        ],
+        'SH': ['WEDS', 'INDO', 'SPO', 'ROSS', 'ABS'],
+    }
+
+    ds_regions_osi.attrs['flag_values'] = da_nsidc.attrs['flag_values'][1:]
+    ds_regions_osi.attrs['flag_meanings'] = np.asarray(
+        da_nsidc.attrs['flag_meanings'].split(' ')
+    )[1:]
+    ds_regions_osi.attrs['flag_meanings_short'] = np.asarray(
+        short_flag_meanings[hemisphere]
     )
 
     if 'x' in ds_regions_osi.dims:
@@ -207,12 +245,14 @@ def generate_regions(grid, ifile_nsidc):
     proj = getattr(ccrs, projection)(**proj_options)
     ax = plt.axes(projection=proj)
 
+    region_count = len(short_flag_meanings[hemisphere])
+
     cmap = matplotlib.colormaps.get_cmap('nipy_spectral')
-    icolor = np.linspace(0, 1, 19)
+    icolor = np.linspace(0, 1, region_count + 1)
     icolor = icolor[::2].tolist() + icolor[1::2].tolist()
     colors = cmap(icolor)
 
-    levels = np.arange(0.5, 19.5)
+    levels = np.arange(0.5, region_count + 1.5)
     norm = BoundaryNorm(levels, ncolors=len(colors), clip=True)
     plot = ax.pcolormesh(
         ds_regions_osi.xc,
@@ -224,7 +264,7 @@ def generate_regions(grid, ifile_nsidc):
 
     ax.coastlines()
     cb = plt.colorbar(plot)
-    cb.set_ticks(np.arange(1, 19))
+    cb.set_ticks(np.arange(1, region_count + 1))
     cb.set_ticklabels(ds_regions_osi.attrs['flag_meanings_short'])
     cb.ax.minorticks_off()
 
@@ -246,9 +286,18 @@ if __name__ == '__main__':
         choices=['osi-cdr', 'osi-401-b', 'osi-408'],
         required=True,
     )
+
+    parser.add_argument(
+        '-hm',
+        '--hemisphere',
+        help='The hemisphere of the regions.',
+        choices=['NH', 'SH'],
+        required=True,
+    )
+
     parser.add_argument(
         '-p', '--path', help='Path to NSIDC file.', required=True
     )
 
     args = parser.parse_args()
-    generate_regions(args.grid, args.path)
+    generate_regions(args.grid, args.hemisphere, args.path)
