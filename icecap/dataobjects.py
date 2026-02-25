@@ -89,27 +89,43 @@ class DataObject:
         self.filelist = []
         return self.filelist
 
-    def interpolate(self, ds_raw):
+    def interpolate(self, da_raw, extrapolate=True):
         """
         Interpolate forecast to observation grid
-        :param ds_raw: raw forecast xarray object
+        :param da_raw: raw forecast xarray dataarray
+        :param extrapolate: boolean flag to configure whether interpolation will be extrapolated
         :return: interpolated field as xarray object
         """
         if self.periodic is None:
             raise ValueError("Class attribute periodic used in interpolate can't be set to None")
 
+        ds_raw = da_raw.to_dataset()
+        ds_raw['mask'] = xr.where(da_raw.isel(time=0).squeeze().isnull(), 0, 1)
+
         ref_file = f'{self.obscachedir}/{self.verif_name}.nc'
-        ds_ref = xr.open_dataarray(ref_file)
+        da_ref = xr.open_dataarray(ref_file)
+        ds_ref = da_ref.to_dataset()
+        ds_ref['mask'] = xr.where(da_ref.isel(time=0).squeeze().isnull(), 0, 1)
 
         if self.regridder is None:
             utils.print_info('Computing weights')
 
-            self.regridder = xe.Regridder(ds_raw.rename({'longitude': 'lon', 'latitude': 'lat'}),
-                                          ds_ref.rename({'longitude': 'lon', 'latitude': 'lat'}),
-                                          "bilinear", periodic=self.periodic,
-                                          unmapped_to_nan=True)
+            if extrapolate:
+                self.regridder = xe.Regridder(ds_raw.rename({'longitude': 'lon', 'latitude': 'lat'}),
+                                              ds_ref.rename({'longitude': 'lon', 'latitude': 'lat'}),
+                                              "bilinear",
+                                              periodic=self.periodic,
+                                              unmapped_to_nan=True,
+                                              extrap_method='nearest_s2d')
+            else:
+                self.regridder = xe.Regridder(
+                    ds_raw.rename({'longitude': 'lon', 'latitude': 'lat'}),
+                    ds_ref.rename({'longitude': 'lon', 'latitude': 'lat'}),
+                    "bilinear",
+                    periodic=self.periodic,
+                    unmapped_to_nan=True)
 
-        ds_out = self.regridder(ds_raw.rename({'longitude': 'lon', 'latitude': 'lat'}))
+        ds_out = self.regridder(da_raw.rename({'longitude': 'lon', 'latitude': 'lat'}))
 
 
         # make sure interpolated fields have same xc and yc values as ref
