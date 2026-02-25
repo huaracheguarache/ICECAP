@@ -86,6 +86,6 @@ class NerscData(dataobjects.ForecastObject):
 
 
                 if self.linterp:
-                    da_out_save = self.interpolate(da_in.isel(time=slice(self.ndays)))
+                    da_out_save = self.interpolate(da_in.isel(time=slice(self.ndays)), extrapolate=False)
                     ofile = self._save_filename(date=self.startdate, number=member, grid=self.grid)
                     da_out_save.sel(number=member).to_netcdf(ofile)
