@@ -186,6 +186,15 @@ class CdsData(dataobjects.ForecastObject):
 
             # mask using the land-sea mask (if necessary for the respective dataset)
             if self.lsm:
+                # Convert siconc from fraction of grid cell area to fraction
+                # of sea area in the grid cell, using the land sea mask. This
+                # is needed for the seasonal forecasts from C3S accessed on
+                # the CDS. Clip the data to make sure that converted values
+                # do not exceed 1.
+                raw_lsm = xr.open_dataset(f'{self.fccachedir}/raw_lsm.nc').lsm.isel(number=0)
+                da_in.values = da_in.values / (1 - raw_lsm.values)
+                da_in = da_in.where(da_in <= 1, 1)
+
                 da_lsm = xr.open_dataarray(f'{self.fccachedir}/lsm.nc').isel(number=0)
                 # drop coords not in dims as otherwise time is deleted from da_in after where command
                 da_lsm = da_lsm.drop([i for i in da_lsm.coords if i not in da_lsm.dims])
