@@ -5,7 +5,7 @@ import argparse
 import os
 import config
 import clargs
-import ecmwf
+import ecmwf_data_retrievals
 import utils
 
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     conf = config.Configuration(file=args.configfile)
 
-    data = ecmwf.EcmwfData(conf, args)
+    data = ecmwf_data_retrievals.EcmwfData(conf, args)
 
 
     if args.exptype == 'INIT':

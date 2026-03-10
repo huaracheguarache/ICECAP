@@ -2,25 +2,25 @@ name: icecap
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
-  - cartopy=0.25.0
-  - cdsapi=0.7.5
-  - cfgrib=0.9.10.4
-  - cmocean=3.0.3
-  - dask=2023.12.0
-  - eccodes=2.32.1
-  - ecflow=5.11.4
-  - ipykernel=6.29.5
-  - ipython=8.29.0
-  - ipywidgets=8.1.5
-  - matplotlib=3.8.2
-  - netcdf4=1.6.5
-  - numpy=1.26.2
-  - pandas=1.5.3
-  - scipy=1.11.4
-  - xarray=2023.12.0
-  - xesmf=0.8.2
-  - xskillscore=0.0.26
-  - jupyterlab=4.3.1
-  - jupytext=1.16.4
+  - python=3.13
+  - cartopy
+  - cdsapi
+  - cfgrib
+  - cmocean
+  - dask
+  - eccodes
+  - ecflow
+  - ipykernel
+  - ipython
+  - ipywidgets
+  - matplotlib
+  - netcdf4=1.7.4
+  - numpy
+  - pandas
+  - scipy
+  - xarray
+  - xesmf
+  - xskillscore
+  - jupyterlab
+  - jupytext
 

@@ -4,7 +4,7 @@ create folders. copy scripts etc
 
 import os
 import shutil
-import ecmwf
+import ecmwf_data_retrievals
 import utils
 import flow
 import flow_sequential
@@ -19,7 +19,7 @@ def create_flow(conf):
         if conf.machine is None:
             return flow.ProcessTree(conf)
         elif conf.machine == 'ecmwf':
-            return ecmwf.EcmwfTree(conf)
+            return ecmwf_data_retrievals.EcmwfTree(conf)
     else:
         return flow_sequential.ProcesstreeSequential(conf)
 
